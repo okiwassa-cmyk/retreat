@@ -413,8 +413,23 @@ tr:hover td{background:var(--teal-lt)}
     .option-group.cols-3 { grid-template-columns: 1fr 1fr; }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- ログイン画面 -->
+<div id="login-overlay" style="position:fixed;inset:0;z-index:9999;background:var(--sand);display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.12);max-width:380px;width:100%;padding:32px">
+    <h2 style="font-family:'Cormorant Garamond',serif;color:var(--teal);font-size:26px;margin-bottom:4px">Yambaru Retreat</h2>
+    <p style="color:var(--mid);font-size:13px;margin-bottom:22px">予約管理システム ログイン</p>
+    <div class="fg" style="margin-bottom:14px"><label>メールアドレス</label><input id="login-email" type="email" autocomplete="username" placeholder="staff@example.com"></div>
+    <div class="fg" style="margin-bottom:18px"><label>パスワード</label><input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <div id="login-err" style="display:none;color:#c0392b;font-size:13px;margin-bottom:12px"></div>
+    <button id="login-btn" class="btn btn-primary" style="width:100%" onclick="sbLogin()">ログイン</button>
+    <p style="color:var(--lt);font-size:11px;margin-top:16px;text-align:center">オフライン時はローカルデータで動作します</p>
+    <button onclick="sbSkipLogin()" style="display:block;margin:10px auto 0;background:none;border:none;color:var(--lt);font-size:11px;text-decoration:underline;cursor:pointer">オフラインで開く</button>
+  </div>
+</div>
 
 <header>
   <h1>Yambaru Retreat<span>WASSA WASSA — 予約管理システム</span></h1>
@@ -427,6 +442,7 @@ tr:hover td{background:var(--teal-lt)}
   <button onclick="showPage('calendar')">🗓 カレンダー</button>
   <button onclick="showPage('clients')">👤 顧客管理</button>
   <button onclick="showPage('master')">⚙️ マスター管理</button>
+  <button onclick="sbRefresh()" title="Webからの新着予約を取り込みます">🔄 Web予約を更新</button>
 </nav>
 
 <main>
@@ -543,6 +559,7 @@ tr:hover td{background:var(--teal-lt)}
       </div>
       <div class="muted" id="list-count" style="align-self:center"></div>
     </div>
+    <div id="list-conflict"></div>
     <div class="tbl-wrap">
       <table>
         <thead><tr><th>チェックイン</th><th>宿泊者名</th><th>プラン</th><th>ステータス</th><th></th></tr></thead>
@@ -676,13 +693,15 @@ tr:hover td{background:var(--teal-lt)}
             <option value="other">その他</option>
           </select>
         </div>
+        <div class="fg"><label>予約可能スタート時間帯</label><input id="m-windows" placeholder="9:00-10:00, 14:00-15:00"></div>
       </div>
+      <p class="muted" style="font-size:11px;margin:-4px 0 8px">※ Web予約フォームでお客様に表示するスタート時間の範囲です（例「9:00-10:00, 14:00-15:00」）。空欄の場合は標準時間帯になります。</p>
       <div class="bgrp"><button class="btn btn-primary btn-sm" onclick="saveMenu()">＋ 追加</button></div>
     </div>
     <div class="card">
       <div class="card-title">登録済みメニュー</div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>メニュー名</th><th>料金</th><th>所要時間</th><th>カテゴリ</th><th></th></tr></thead>
+        <thead><tr><th>メニュー名</th><th>料金</th><th>所要時間</th><th>カテゴリ</th><th>予約可能時間帯</th><th></th></tr></thead>
         <tbody id="menu-tbody"></tbody>
       </table></div>
     </div>
@@ -1073,6 +1092,126 @@ let gf_existingClientDosha = null;
 let gf_prakritiScores = {};
 function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
 
+// ============================================================
+// SUPABASE 連携（共有バックエンド）
+// ============================================================
+const SB_URL='https://ohwvkcxoxmjfvhscyddt.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9od3ZrY3hveG1qZnZoc2N5ZGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njg2NjcsImV4cCI6MjA5NjM0NDY2N30.RjPnt5aQ4EJpnICOZla1QSblKfabu2LefEMTeBvKbr0';
+let sb=null;
+try{ sb=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ console.warn('Supabase init失敗',e); }
+let _sbReady=false; // ログイン後 true：以後 saveAll で同期する
+
+// 現在のメモリ配列を Supabase の行形式に変換
+function _sbRows(){
+  return {
+    retreat_clients:    clients.map(c=>({id:c.id, data:c})),
+    retreat_plans:      plans.map(p=>({id:p.id, data:p})),
+    retreat_menus:      menus.map(m=>({id:m.id, data:m})),
+    retreat_activities: activities.map(a=>({id:a.id, data:a})),
+    retreat_templates:  Object.keys(templates).map(k=>({id:k, data:templates[k]})),
+    retreat_bookings:   bookings.map(b=>({id:b.id, checkin:b.checkin||null, status:b.status||'pending', client_id:b.clientId||null, data:b})),
+  };
+}
+
+// 全テーブルを upsert（削除はしない＝Web新着予約を消さないため）
+let _pushTimer=null;
+function sbPushAll(){
+  if(!_sbReady||!sb) return;
+  clearTimeout(_pushTimer);
+  _pushTimer=setTimeout(async function(){
+    const rows=_sbRows();
+    for(const tbl in rows){
+      if(!rows[tbl].length) continue;
+      const {error}=await sb.from(tbl).upsert(rows[tbl],{onConflict:'id'});
+      if(error) console.error('同期エラー',tbl,error);
+    }
+  },600);
+}
+
+// 個別行を削除（アプリ上で明示的に削除した時のみ呼ぶ）
+async function sbDelete(tbl,id){
+  if(!_sbReady||!sb) return;
+  const {error}=await sb.from(tbl).delete().eq('id',id);
+  if(error) console.error('削除エラー',tbl,id,error);
+}
+
+// Supabase から全データを取得してメモリ配列を置き換え、localStorage キャッシュも更新
+async function sbLoadAll(){
+  if(!sb) return false;
+  const pull=async function(tbl){ const {data,error}=await sb.from(tbl).select('*'); if(error){console.error('取得エラー',tbl,error);return null;} return data||[]; };
+  const [c,p,m,a,tpl,b,gf]=await Promise.all([
+    pull('retreat_clients'),pull('retreat_plans'),pull('retreat_menus'),
+    pull('retreat_activities'),pull('retreat_templates'),pull('retreat_bookings'),pull('retreat_guest_forms')
+  ]);
+  if(c) clients=c.map(r=>r.data);
+  if(p) plans=p.length?p.map(r=>r.data):DEFAULT_PLANS;
+  if(m) menus=m.length?m.map(r=>r.data):DEFAULT_MENUS;
+  if(a) activities=a.length?a.map(r=>r.data):DEFAULT_ACTIVITIES;
+  if(tpl){ const t={}; tpl.forEach(r=>t[r.id]=r.data); templates=Object.keys(t).length?t:JSON.parse(JSON.stringify(DEFAULT_TEMPLATES)); }
+  if(b) bookings=b.map(r=>r.data);
+  if(gf){ const forms=gf.map(r=>r.data); localStorage.setItem('yr_guest_forms', JSON.stringify(forms)); }
+  // ローカルキャッシュ更新（_sbReady=false の間に書いて再 push しない）
+  save('yr2_clients',clients); save('yr2_plans',plans); save('yr2_menus',menus);
+  save('yr2_activities',activities); save('yr2_templates',templates); save('yr2_bookings',bookings);
+  return true;
+}
+
+// 初回起動：リモートが空でローカルにデータがあれば、ローカルをアップロード（移行）。
+// それ以外はリモートを正としてローカルへ反映。
+async function sbBootstrap(){
+  if(!sb) return;
+  const {data:rb}=await sb.from('retreat_bookings').select('id').limit(1);
+  const {data:rm}=await sb.from('retreat_menus').select('id').limit(1);
+  const remoteEmpty=(!rb||!rb.length)&&(!rm||!rm.length);
+  const localHas=(bookings&&bookings.length)||(menus&&menus.length);
+  if(remoteEmpty && localHas){
+    // ローカルデータを Supabase へ移行
+    _sbReady=true;
+    const rows=_sbRows();
+    for(const tbl in rows){
+      if(!rows[tbl].length) continue;
+      const {error}=await sb.from(tbl).upsert(rows[tbl],{onConflict:'id'});
+      if(error) console.error('移行エラー',tbl,error);
+    }
+    // 既存のゲストフォームも移行
+    const gforms=JSON.parse(localStorage.getItem('yr_guest_forms')||'[]');
+    for(const f of gforms){
+      if(!f.id) f.id=uid();
+      await sb.from('retreat_guest_forms').upsert({id:f.id,booking_id:f.bookingId||null,data:f},{onConflict:'id'});
+    }
+  } else {
+    await sbLoadAll();
+    _sbReady=true;
+  }
+}
+
+function _loginErr(msg){ const e=document.getElementById('login-err'); if(e){ e.textContent=msg; e.style.display='block'; } }
+
+async function sbLogin(){
+  const email=(document.getElementById('login-email').value||'').trim();
+  const pass=document.getElementById('login-pass').value||'';
+  if(!email||!pass){ _loginErr('メールアドレスとパスワードを入力してください'); return; }
+  if(!sb){ _loginErr('接続できません。オフラインで開いてください。'); return; }
+  const btn=document.getElementById('login-btn'); btn.disabled=true; btn.textContent='ログイン中…';
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){ _loginErr('ログインに失敗しました：'+error.message); btn.disabled=false; btn.textContent='ログイン'; return; }
+  await sbBootstrap();
+  document.getElementById('login-overlay').style.display='none';
+  showPage('list');
+}
+
+// オフライン（ローカルのみ）で開く
+function sbSkipLogin(){
+  document.getElementById('login-overlay').style.display='none';
+}
+
+// Web新着予約をSupabaseから取り込み再描画（手動更新ボタン）
+async function sbRefresh(){
+  if(!_sbReady){ alert('オフラインモードのため更新できません'); return; }
+  const ok=await sbLoadAll();
+  if(ok){ renderList(); alert('最新の予約を取り込みました'); }
+}
+
 let clients    = load('yr2_clients',    []);
 let plans      = load('yr2_plans',      DEFAULT_PLANS);
 let menus      = load('yr2_menus',      DEFAULT_MENUS);
@@ -1115,12 +1254,13 @@ function saveAll(){
   save('yr2_activities',activities);
   save('yr2_templates', templates);
   save('yr2_bookings',  bookings);
+  sbPushAll();
 }
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
-// デモデータ：bookingsが空のときのみ初期投入
-if(!bookings.length){
+// デモデータ：オフライン（Supabase未接続）かつ空のときのみ初期投入
+if(!sb && !bookings.length){
   const tid = uid();
   bookings = [
     {
@@ -1798,8 +1938,36 @@ function refreshListPlanSel(){
   });
   if(cur) sel.value=cur;
 }
+// 施術時間の重複を検出（施術はセラピスト1名・同時刻1名のみ）
+function findTreatmentConflicts(){
+  const slots=[]; // {date,time,who}
+  bookings.forEach(function(b){
+    if(b.status==='cancelled') return;
+    (b.guests||[]).forEach(function(g){
+      if(g.menuId && g.trDate && g.trTime) slots.push({date:g.trDate,time:g.trTime,who:(g.name||b.rep||'')});
+      (g.addTrs||[]).forEach(function(at){
+        if(at.menuId && at.date && at.time) slots.push({date:at.date,time:at.time,who:(g.name||b.rep||'')});
+      });
+    });
+  });
+  const map={};
+  slots.forEach(function(s){ const k=s.date+' '+s.time; (map[k]=map[k]||[]).push(s.who); });
+  return Object.keys(map).filter(k=>map[k].length>1).sort().map(k=>({slot:k,names:map[k]}));
+}
+function renderConflicts(){
+  const el=document.getElementById('list-conflict'); if(!el) return;
+  const conf=findTreatmentConflicts();
+  if(!conf.length){ el.innerHTML=''; return; }
+  el.innerHTML='<div style="background:#FDECEA;border:1.5px solid #E74C3C;border-radius:8px;padding:12px 14px;margin-bottom:12px">'
+    +'<strong style="color:#C0392B">⚠️ 施術時間が重複しています</strong>'
+    +'<div style="font-size:12px;color:#7B241C;margin-top:4px">施術はセラピスト1名・同時刻におひとり様のみです。下記の時間帯をご確認ください。</div>'
+    +'<ul style="margin:8px 0 0 18px;font-size:13px;color:#7B241C">'
+    +conf.map(c=>'<li>'+c.slot+'　→　'+c.names.join('、')+'</li>').join('')
+    +'</ul></div>';
+}
 function renderList(){
   refreshListPlanSel();
+  renderConflicts();
   const month  = document.getElementById('list-month').value;
   const plan   = document.getElementById('list-plan').value;
   const search = (document.getElementById('list-search').value||'').trim();
@@ -1883,7 +2051,7 @@ function showDetail(id){
   document.getElementById('modal-title').textContent=b.rep+'様の予約';
   document.getElementById('modal-del-btn').onclick=function(){
     if(confirm('この予約を削除しますか？')){
-      bookings=bookings.filter(x=>x.id!==id);
+      bookings=bookings.filter(x=>x.id!==id); sbDelete('retreat_bookings',id);
       saveAll(); closeModal('modal-detail'); renderList();
     }
   };
@@ -3080,7 +3248,7 @@ function delPlan(id){
   const p=plans.find(x=>x.id===id);
   if(!p) return;
   if(confirm('「'+p.name+'」を削除しますか？\n※ このプランの予約データは変更されません。')){
-    plans=plans.filter(x=>x.id!==id);
+    plans=plans.filter(x=>x.id!==id); sbDelete('retreat_plans',id);
     saveAll(); renderPlanTable(); refreshPlanSel(); refreshListPlanSel(); refreshTplSel();
   }
 }
@@ -3124,22 +3292,44 @@ function showMasterTab(tab){
   if(tab==='plan') renderPlanTable();
 }
 
+// "9:00-10:00, 14:00-15:00" → [{from:'09:00',to:'10:00'},...]
+function parseWindows(str){
+  if(!str) return [];
+  const pad=t=>{ const [h,m]=t.trim().split(':'); return String(parseInt(h,10)).padStart(2,'0')+':'+(m||'00').padStart(2,'0'); };
+  return str.split(',').map(s=>s.trim()).filter(Boolean).map(function(seg){
+    const [a,b]=seg.split('-');
+    if(!a||!b) return null;
+    return {from:pad(a),to:pad(b)};
+  }).filter(Boolean);
+}
+function formatWindows(wins){
+  return (wins||[]).map(w=>w.from+'-'+w.to).join(', ');
+}
 function saveMenu(){
   const name=document.getElementById('m-name').value.trim();
   if(!name){ alert('メニュー名は必須です'); return; }
-  menus.push({id:uid(),name,price:parseInt(document.getElementById('m-price').value)||0,dur:document.getElementById('m-dur').value,cat:document.getElementById('m-cat').value});
+  menus.push({id:uid(),name,price:parseInt(document.getElementById('m-price').value)||0,dur:document.getElementById('m-dur').value,cat:document.getElementById('m-cat').value,startWindows:parseWindows(document.getElementById('m-windows').value)});
   saveAll(); renderMenuTable();
-  ['m-name','m-price','m-dur'].forEach(id=>document.getElementById(id).value='');
+  ['m-name','m-price','m-dur','m-windows'].forEach(id=>document.getElementById(id).value='');
 }
-function delMenu(id){ if(confirm('削除しますか？')){ menus=menus.filter(m=>m.id!==id); saveAll(); renderMenuTable(); } }
+function editMenuWindows(id){
+  const m=menus.find(x=>x.id===id); if(!m) return;
+  const cur=formatWindows(m.startWindows);
+  const inp=prompt('予約可能スタート時間帯を入力してください\n例: 9:00-10:00, 14:00-15:00\n（空欄にすると標準時間帯になります）', cur);
+  if(inp===null) return;
+  m.startWindows=parseWindows(inp);
+  saveAll(); renderMenuTable();
+}
+function delMenu(id){ if(confirm('削除しますか？')){ menus=menus.filter(m=>m.id!==id); sbDelete('retreat_menus',id); saveAll(); renderMenuTable(); } }
 function renderMenuTable(){
   const tb=document.getElementById('menu-tbody');
-  if(!menus.length){ tb.innerHTML='<tr class="empty-row"><td colspan="5">データなし</td></tr>'; return; }
+  if(!menus.length){ tb.innerHTML='<tr class="empty-row"><td colspan="6">データなし</td></tr>'; return; }
   tb.innerHTML=menus.map(m=>`<tr>
     <td><strong>${m.name}</strong></td>
     <td>¥${(m.price||0).toLocaleString()}</td>
     <td>${m.dur||'—'}</td>
     <td><span class="badge ${m.cat==='ws'?'badge-retreat':'badge-treatment'}">${m.cat==='ws'?'WS':'施術'}</span></td>
+    <td><span style="font-size:12px">${formatWindows(m.startWindows)||'<span class="muted">標準</span>'}</span> <button class="btn btn-secondary btn-sm" onclick="editMenuWindows('${m.id}')">編集</button></td>
     <td><button class="btn btn-danger btn-sm" onclick="delMenu('${m.id}')">削除</button></td>
   </tr>`).join('');
 }
@@ -3154,7 +3344,7 @@ function saveActivity(){
   saveAll(); renderActivityTable();
   ['a-name','a-price','a-dur','a-org'].forEach(id=>document.getElementById(id).value='');
 }
-function delActivity(id){ if(confirm('削除しますか？')){ activities=activities.filter(a=>a.id!==id); saveAll(); renderActivityTable(); } }
+function delActivity(id){ if(confirm('削除しますか？')){ activities=activities.filter(a=>a.id!==id); sbDelete('retreat_activities',id); saveAll(); renderActivityTable(); } }
 function renderActivityTable(){
   const tb=document.getElementById('activity-tbody');
   if(!activities.length){ tb.innerHTML='<tr class="empty-row"><td colspan="5">データなし</td></tr>'; return; }
@@ -4046,9 +4236,15 @@ function gf_submitForm() {
   const dupIdx = existing.findIndex(function(f){
     return f.bookingId === gf_formData.bookingId && f.name === gf_formData.name;
   });
-  if(dupIdx >= 0) existing.splice(dupIdx, 1);
+  if(dupIdx >= 0){ gf_formData.id = existing[dupIdx].id || gf_formData.id; existing.splice(dupIdx, 1); }
+  if(!gf_formData.id) gf_formData.id = uid();
   existing.unshift(gf_formData);
   localStorage.setItem('yr_guest_forms', JSON.stringify(existing));
+  // Supabase へ反映
+  if(_sbReady && sb){
+    sb.from('retreat_guest_forms').upsert({id:gf_formData.id, booking_id:gf_formData.bookingId||null, data:gf_formData},{onConflict:'id'})
+      .then(function(r){ if(r.error) console.error('ゲストフォーム同期エラー',r.error); });
+  }
   document.querySelectorAll('#gf-inner .step').forEach(s=>s.classList.remove('active'));
   const _pb=document.querySelector('#gf-inner .progress-bar'); if(_pb)_pb.style.display='none';
   document.getElementById('step-nav').style.display='none';
@@ -4240,6 +4436,21 @@ document.body.addEventListener('click', function(e){
   // フォームを開く
   setTimeout(function(){ openGuestForm(bid, gi); }, 200);
 }, true);
+
+// ============================================================
+// 起動時：既存ログインセッションがあれば自動的に開く
+// ============================================================
+(async function(){
+  if(!sb) return; // オフライン：ログイン画面のまま（オフラインで開くボタン利用）
+  try{
+    const {data}=await sb.auth.getSession();
+    if(data && data.session){
+      await sbBootstrap();
+      const ov=document.getElementById('login-overlay'); if(ov) ov.style.display='none';
+      showPage('list');
+    }
+  }catch(e){ console.warn('セッション確認エラー',e); }
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>トリートメントご予約 ｜ YAMBARU Retreat</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#2D6A6A;--teal-lt:#E8F4F4;--teal-md:#B8DADA;--teal-pale:#E0F4F4;
+  --sand:#F5F0E8;--sand-dk:#EDE5D8;
+  --tx:#1A1A1A;--mid:#666;--lt:#AAA;--accent:#C4895A;
+  --radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08);
+}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--sand);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.7;display:flex;flex-direction:column}
+.lang-bar{background:var(--teal);padding:10px 20px;display:flex;justify-content:flex-end;gap:8px}
+.lang-btn{padding:6px 16px;border:1px solid rgba(255,255,255,.4);background:none;color:rgba(255,255,255,.7);border-radius:20px;cursor:pointer;font-size:13px}
+.lang-btn.active{background:#fff;color:var(--teal);font-weight:500;border-color:#fff}
+.form-header{text-align:center;padding:26px 20px 10px;background:linear-gradient(180deg,var(--teal),#245858);color:#fff}
+.form-header h1{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;letter-spacing:.12em}
+.form-header h1 em{font-style:italic;opacity:.9}
+.form-header p{font-size:12px;opacity:.9;margin-top:8px;line-height:1.8}
+.progress-bar{display:flex;background:#fff;border-bottom:1px solid var(--sand-dk);overflow-x:auto}
+.progress-step{flex:1;min-width:64px;text-align:center;padding:11px 4px;font-size:11px;color:var(--lt);border-bottom:2px solid transparent;white-space:nowrap}
+.progress-step.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:600}
+.progress-step.done{color:var(--teal);opacity:.6}
+.wrap{flex:1;overflow-y:auto;padding-bottom:24px}
+.step{display:none;padding:20px 16px;max-width:680px;margin:0 auto}
+.step.active{display:block}
+.fcard{background:#fff;border-radius:var(--radius);padding:20px;margin-bottom:14px;box-shadow:var(--shadow)}
+.fcard-title{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--teal);margin-bottom:6px;letter-spacing:1px}
+.fcard-sub{font-size:12px;color:var(--mid);margin-bottom:16px;line-height:1.7}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
+.fg label{font-size:12px;font-weight:500;color:var(--mid)}
+.req{color:var(--accent)}
+input,select,textarea{padding:10px 12px;border:1.5px solid #E0E0E0;border-radius:8px;font-size:14px;font-family:inherit;color:var(--tx);background:#fff;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);background:var(--teal-lt)}
+textarea{min-height:70px;resize:vertical}
+.option-group{display:grid;gap:8px}
+.option-group.cols-2{grid-template-columns:1fr 1fr}
+.option-group.cols-3{grid-template-columns:1fr 1fr 1fr}
+.opt-label{background:var(--sand);border:1.5px solid var(--sand-dk);border-radius:10px;padding:11px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;user-select:none;transition:.15s}
+.opt-label.selected{background:var(--teal-pale);border-color:var(--teal);color:var(--teal)}
+.opt-label input{display:none}
+.opt-circle{width:18px;height:18px;border:2px solid #CCC;border-radius:50%;flex-shrink:0}
+.opt-label.selected .opt-circle{border-color:var(--teal);background:var(--teal)}
+.opt-square{width:18px;height:18px;border:2px solid #CCC;border-radius:4px;flex-shrink:0;color:transparent;font-size:12px;text-align:center;line-height:14px}
+.opt-label.selected .opt-square{border-color:var(--teal);background:var(--teal);color:#fff}
+.menu-card{display:flex;justify-content:space-between;align-items:center}
+.menu-card .price{font-size:12px;color:var(--accent);font-weight:600}
+.dosha-q{padding:14px 0;border-bottom:1px solid var(--sand-dk)}
+.dosha-q p{font-size:14px;margin-bottom:10px;font-weight:500}
+.scale-row{display:flex;flex-direction:column;gap:6px}
+.scale-btns{display:flex;gap:6px;justify-content:center}
+.scale-btn{width:42px;height:42px;border:1.5px solid #E0E0E0;background:#fff;border-radius:50%;cursor:pointer;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.scale-btn.selected{background:var(--teal);color:#fff;border-color:var(--teal)}
+.scale-label{font-size:10px;color:var(--lt);text-align:center}
+.mode-btn{background:var(--sand);border:1.5px solid var(--sand-dk);border-radius:12px;padding:16px 20px;cursor:pointer;text-align:center;min-width:140px}
+.mode-btn.selected{background:var(--teal-pale);border-color:var(--teal)}
+.mode-btn-icon{font-size:26px}
+.mode-btn-title{font-weight:600;color:var(--teal);margin:6px 0 2px}
+.mode-btn-q,.mode-btn-time{font-size:11px;color:var(--mid)}
+.note{background:var(--teal-pale);border-left:3px solid var(--teal);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--teal);margin-top:8px}
+.warn{background:#FFF3E0;border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:12px;color:#8a5a2b;margin-bottom:14px}
+.step-nav{background:#fff;border-top:1px solid var(--sand-dk);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0}
+#btn-back{background:none;border:1.5px solid #CCC;color:#666;padding:12px 24px;border-radius:30px;cursor:pointer;font-size:14px}
+#btn-next{background:var(--teal);color:#fff;border:none;padding:14px 36px;border-radius:30px;cursor:pointer;font-size:15px;font-weight:600;margin-left:auto}
+#btn-next:disabled{opacity:.5;cursor:wait}
+.en{display:none}
+.review-box{padding:12px;background:var(--sand);border-radius:8px;margin-bottom:8px}
+.review-box .k{font-size:11px;color:var(--mid);margin-bottom:3px}
+@media(max-width:520px){.option-group.cols-3{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <button class="lang-btn active" id="lb-ja" onclick="setLang('ja')">日本語</button>
+  <button class="lang-btn" id="lb-en" onclick="setLang('en')">English</button>
+</div>
+
+<div class="form-header">
+  <h1>YAMBARU <em>Retreat</em></h1>
+  <p><span class="ja">トリートメントのご予約フォームです。デラックスツインにご宿泊予約済みの方がご利用いただけます。</span><span class="en">Treatment reservation form. Available to guests with a confirmed Deluxe Twin stay.</span></p>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-step active" id="prog-0"><span class="ja">基本情報</span><span class="en">Basic</span></div>
+  <div class="progress-step" id="prog-1"><span class="ja">ご宿泊</span><span class="en">Stay</span></div>
+  <div class="progress-step" id="prog-2"><span class="ja">ご予約内容</span><span class="en">Treatment</span></div>
+  <div class="progress-step" id="prog-3"><span class="ja">健康情報</span><span class="en">Health</span></div>
+  <div class="progress-step" id="prog-4"><span class="ja">体質診断①</span><span class="en">Dosha ①</span></div>
+  <div class="progress-step" id="prog-5"><span class="ja">体質診断②</span><span class="en">Dosha ②</span></div>
+  <div class="progress-step" id="prog-6"><span class="ja">確認</span><span class="en">Review</span></div>
+</div>
+
+<div class="wrap">
+
+<!-- STEP 0: Basic -->
+<div class="step active" id="step-0">
+  <div class="fcard">
+    <div class="fcard-title"><span class="ja">基本情報（施術を受ける方）</span><span class="en">Basic Info (treatment recipient)</span></div>
+    <div class="fcard-sub"><span class="ja">施術を受けるご本人の情報をご記入ください。</span><span class="en">Please enter the details of the person receiving the treatment.</span></div>
+    <div class="fg">
+      <label><span class="ja">お名前（漢字・フルネーム）</span><span class="en">Full Name</span><span class="req"> *</span></label>
+      <input type="text" id="f-name" placeholder="山田 花子 / Hanako Yamada">
+    </div>
+    <div class="fg">
+      <label><span class="ja">ふりがな / Romanization</span></label>
+      <input type="text" id="f-kana" placeholder="やまだ はなこ / Yamada Hanako">
+    </div>
+    <div class="fg">
+      <label><span class="ja">電話番号</span><span class="en">Phone</span><span class="req"> *</span></label>
+      <input type="tel" id="f-phone" placeholder="090-0000-0000">
+    </div>
+    <div class="fg">
+      <label><span class="ja">メールアドレス</span><span class="en">Email</span><span class="req"> *</span></label>
+      <input type="email" id="f-email" placeholder="example@mail.com">
+    </div>
+    <div class="fg">
+      <label><span class="ja">性別</span><span class="en">Gender</span></label>
+      <div class="option-group cols-3" id="gender-group">
+        <label class="opt-label" onclick="selOne(this,'gender-group')"><input type="radio" name="gender" value="female"><div class="opt-circle"></div><span class="ja">女性</span><span class="en">Female</span></label>
+        <label class="opt-label" onclick="selOne(this,'gender-group')"><input type="radio" name="gender" value="male"><div class="opt-circle"></div><span class="ja">男性</span><span class="en">Male</span></label>
+        <label class="opt-label" onclick="selOne(this,'gender-group')"><input type="radio" name="gender" value="other"><div class="opt-circle"></div><span class="ja">その他</span><span class="en">Other</span></label>
+      </div>
+    </div>
+    <div class="fg">
+      <label><span class="ja">年代</span><span class="en">Age Group</span><span class="req"> *</span></label>
+      <div class="option-group cols-3" id="age-group">
+        <label class="opt-label" onclick="selOne(this,'age-group')"><input type="radio" name="age" value="20代"><div class="opt-circle"></div>20代</label>
+        <label class="opt-label" onclick="selOne(this,'age-group')"><input type="radio" name="age" value="30代"><div class="opt-circle"></div>30代</label>
+        <label class="opt-label" onclick="selOne(this,'age-group')"><input type="radio" name="age" value="40代"><div class="opt-circle"></div>40代</label>
+        <label class="opt-label" onclick="selOne(this,'age-group')"><input type="radio" name="age" value="50代"><div class="opt-circle"></div>50代</label>
+        <label class="opt-label" onclick="selOne(this,'age-group')"><input type="radio" name="age" value="60代"><div class="opt-circle"></div>60代</label>
+        <label class="opt-label" onclick="selOne(this,'age-group')"><input type="radio" name="age" value="70代以上"><div class="opt-circle"></div>70代〜</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 1: Stay -->
+<div class="step" id="step-1">
+  <div class="fcard">
+    <div class="fcard-title"><span class="ja">ご宿泊情報</span><span class="en">Stay Information</span></div>
+    <div class="warn"><span class="ja">⚠️ トリートメントは「デラックスツイン」に<strong>連泊（2泊以上）</strong>ご予約済みの方のみご予約いただけます。（1泊のご滞在は施術のお時間が確保できないためご予約いただけません）</span><span class="en">⚠️ Treatments are only available to guests with a confirmed Deluxe Twin stay of <strong>2 nights or more</strong>. (1-night stays do not allow enough time for treatment.)</span></div>
+    <div class="fg">
+      <label class="opt-label" id="deluxe-chk-label" onclick="toggleDeluxe(this)" style="margin:0 0 16px"><input type="checkbox" id="f-deluxe"><div class="opt-square">✓</div><span class="ja">デラックスツインを予約済みです</span><span class="en">I have a confirmed Deluxe Twin reservation</span></label>
+    </div>
+    <div class="fg">
+      <label><span class="ja">宿泊代表者様 お名前</span><span class="en">Lodging Representative Name</span><span class="req"> *</span></label>
+      <input type="text" id="f-rep" placeholder="山田 太郎 / Taro Yamada">
+    </div>
+    <div class="fg">
+      <label><span class="ja">チェックイン日</span><span class="en">Check-in Date</span><span class="req"> *</span></label>
+      <input type="date" id="f-checkin">
+    </div>
+    <div class="fg">
+      <label><span class="ja">チェックアウト日</span><span class="en">Check-out Date</span><span class="req"> *</span></label>
+      <input type="date" id="f-checkout">
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2: Treatment -->
+<div class="step" id="step-2">
+  <div class="fcard">
+    <div class="fcard-title"><span class="ja">ご希望のトリートメント</span><span class="en">Choose Your Treatment</span></div>
+    <div class="fcard-sub"><span class="ja">ご希望のメニューを1つお選びください。</span><span class="en">Please select one treatment menu.</span></div>
+    <div class="option-group" id="menu-group"></div>
+  </div>
+  <div class="fcard" id="time-card" style="display:none">
+    <div class="fcard-title"><span class="ja">ご希望のスタート時間（任意）</span><span class="en">Preferred Start Time (optional)</span></div>
+    <div class="fcard-sub"><span class="ja">ご希望があればお選びください。</span><span class="en">Select one if you have a preference.</span></div>
+    <div class="option-group cols-3" id="time-group"></div>
+    <div class="note"><span class="ja">🌿 正確な施術日・時間は、チェックイン時に当施設と調整・確定いたします。施術は同時刻におひとり様ずつとなります。</span><span class="en">🌿 The exact date/time will be adjusted and confirmed with us at check-in. Only one treatment is offered per time slot.</span></div>
+    <div class="fg" style="margin-top:14px">
+      <label><span class="ja">ご希望の施術日（ご滞在中）</span><span class="en">Preferred date (during stay)</span></label>
+      <input type="date" id="f-trdate">
+    </div>
+  </div>
+</div>
+
+<!-- STEP 3: Health -->
+<div class="step" id="step-3">
+  <div class="fcard">
+    <div class="fcard-title"><span class="ja">健康情報</span><span class="en">Health Information</span></div>
+    <div class="fcard-sub"><span class="ja">安全に施術を行うために必要です。正直にご記入ください。</span><span class="en">Required for a safe treatment. Please answer honestly.</span></div>
+    <div class="fg">
+      <label><span class="ja">既往症・慢性疾患（複数選択可）</span><span class="en">Medical history (multiple)</span></label>
+      <div class="option-group cols-2" id="medical-group">
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="heart"><div class="opt-square">✓</div><span class="ja">心臓疾患</span><span class="en">Heart disease</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="hypertension"><div class="opt-square">✓</div><span class="ja">高血圧</span><span class="en">Hypertension</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="diabetes"><div class="opt-square">✓</div><span class="ja">糖尿病</span><span class="en">Diabetes</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="skin"><div class="opt-square">✓</div><span class="ja">皮膚疾患</span><span class="en">Skin conditions</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="allergy"><div class="opt-square">✓</div><span class="ja">アレルギー</span><span class="en">Allergies</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="spine"><div class="opt-square">✓</div><span class="ja">脊椎・骨の疾患</span><span class="en">Spine/bone</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="mental"><div class="opt-square">✓</div><span class="ja">精神疾患</span><span class="en">Mental health</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="none"><div class="opt-square">✓</div><span class="ja">特になし</span><span class="en">None</span></label>
+      </div>
+    </div>
+    <div class="fg">
+      <label><span class="ja">現在の体の不調（複数選択可）</span><span class="en">Current complaints (multiple)</span></label>
+      <div class="option-group cols-2" id="chronic-group">
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="shoulders"><div class="opt-square">✓</div><span class="ja">肩こり・首こり</span><span class="en">Stiff shoulders/neck</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="back"><div class="opt-square">✓</div><span class="ja">腰痛</span><span class="en">Lower back pain</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="cold"><div class="opt-square">✓</div><span class="ja">冷え性</span><span class="en">Cold sensitivity</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="insomnia"><div class="opt-square">✓</div><span class="ja">不眠・睡眠の質</span><span class="en">Insomnia</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="fatigue"><div class="opt-square">✓</div><span class="ja">疲労感・だるさ</span><span class="en">Fatigue</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="digestion"><div class="opt-square">✓</div><span class="ja">消化器の不調</span><span class="en">Digestive issues</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="anxiety"><div class="opt-square">✓</div><span class="ja">不安・ストレス</span><span class="en">Anxiety/stress</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="skin2"><div class="opt-square">✓</div><span class="ja">肌荒れ・乾燥</span><span class="en">Skin/dryness</span></label>
+        <label class="opt-label" onclick="selMany(this)"><input type="checkbox" value="none"><div class="opt-square">✓</div><span class="ja">特になし</span><span class="en">None</span></label>
+      </div>
+    </div>
+    <div class="fg">
+      <label><span class="ja">アレルギー・使えないオイル・その他ご注意事項</span><span class="en">Allergies / oils to avoid / notes</span></label>
+      <textarea id="f-allergy" placeholder="例）ごま油アレルギー / e.g. sesame oil allergy"></textarea>
+    </div>
+    <div class="fg">
+      <label><span class="ja">今回特に改善したいこと・ご要望</span><span class="en">What would you like to improve?</span></label>
+      <textarea id="f-goals" placeholder="例）不眠改善・リフレッシュ / e.g. better sleep, refresh"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 4: Prakriti -->
+<div class="step" id="step-4">
+  <div class="fcard">
+    <div class="fcard-title"><span class="ja">体質診断① プラクリティ</span><span class="en">Dosha ① Prakriti</span></div>
+    <div class="fcard-sub"><span class="ja">当施設でプラクリティ（生まれ持った体質）診断を受けたことはありますか？</span><span class="en">Have you taken a Prakriti diagnosis with us before?</span></div>
+    <div class="option-group cols-2" id="taken-group" style="margin-bottom:8px">
+      <label class="opt-label" onclick="selOne(this,'taken-group');onTakenChange()"><input type="radio" name="taken" value="no"><div class="opt-circle"></div><span class="ja">いいえ／初めて</span><span class="en">No / first time</span></label>
+      <label class="opt-label" onclick="selOne(this,'taken-group');onTakenChange()"><input type="radio" name="taken" value="yes"><div class="opt-circle"></div><span class="ja">はい（省略します）</span><span class="en">Yes (skip)</span></label>
+    </div>
+  </div>
+  <div class="fcard" id="mode-card" style="display:none;text-align:center">
+    <div class="fcard-title"><span class="ja">診断の方法を選んでください</span><span class="en">Choose mode</span></div>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:14px">
+      <button class="mode-btn" id="mode-btn-short" onclick="setMode('short')">
+        <div class="mode-btn-icon">🌿</div><div class="mode-btn-title"><span class="ja">簡易版</span><span class="en">Quick</span></div>
+        <div class="mode-btn-q"><span class="ja">各10・15問</span><span class="en">10 + 15 Q</span></div><div class="mode-btn-time">~3-5 min</div>
+      </button>
+      <button class="mode-btn" id="mode-btn-full" onclick="setMode('full')">
+        <div class="mode-btn-icon">📋</div><div class="mode-btn-title"><span class="ja">詳細版</span><span class="en">Detailed</span></div>
+        <div class="mode-btn-q"><span class="ja">各24・30問</span><span class="en">24 + 30 Q</span></div><div class="mode-btn-time">~8-10 min</div>
+      </button>
+    </div>
+  </div>
+  <div class="fcard" id="prakriti-card" style="display:none">
+    <div class="fcard-sub" id="prakriti-sub"><span class="ja">最も当てはまるものを1つお選びください。</span><span class="en">Select the option that fits best.</span></div>
+    <div id="prakriti-form"></div>
+  </div>
+</div>
+
+<!-- STEP 5: Vikriti -->
+<div class="step" id="step-5">
+  <div class="fcard">
+    <div class="fcard-title"><span class="ja">体質診断② ヴィクリティ（現在の状態）</span><span class="en">Dosha ② Vikriti (current state)</span></div>
+    <div class="fcard-sub"><span class="ja">現在の状態について 1（全く当てはまらない）〜5（とても当てはまる）でお答えください。</span><span class="en">Rate your current state: 1 (not at all) to 5 (very much).</span></div>
+    <div id="vikriti-form"></div>
+  </div>
+</div>
+
+<!-- STEP 6: Review -->
+<div class="step" id="step-6">
+  <div class="fcard">
+    <div class="fcard-title"><span class="ja">入力内容の確認</span><span class="en">Review</span></div>
+    <div class="fcard-sub"><span class="ja">内容をご確認のうえ「送信する」を押してください。</span><span class="en">Please review and submit.</span></div>
+    <div id="review-content"></div>
+  </div>
+</div>
+
+<!-- COMPLETE -->
+<div class="step" id="step-done">
+  <div class="fcard" style="text-align:center;padding:34px 22px">
+    <div style="font-size:48px">🌿</div>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--teal);margin:10px 0"><span class="ja">ありがとうございます</span><span class="en">Thank You</span></h2>
+    <p style="font-size:13px;color:var(--mid)"><span class="ja">ご予約リクエストを受け付けました。<br>内容を確認のうえ、施術日時をご提案するご連絡をいたします。</span><span class="en">Your reservation request has been received.<br>We will contact you to propose a treatment time.</span></p>
+  </div>
+</div>
+
+</div>
+
+<div class="step-nav" id="step-nav">
+  <button id="btn-back" onclick="prevStep()" style="display:none"><span class="ja">← 戻る</span><span class="en">← Back</span></button>
+  <button id="btn-next" onclick="nextStep()"><span class="ja">次へ →</span><span class="en">Next →</span></button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ===== Supabase =====
+const SB_URL = 'https://ohwvkcxoxmjfvhscyddt.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9od3ZrY3hveG1qZnZoc2N5ZGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njg2NjcsImV4cCI6MjA5NjM0NDY2N30.RjPnt5aQ4EJpnICOZla1QSblKfabu2LefEMTeBvKbr0';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+// ===== Default treatment menus (fallback if DB empty) =====
+const DEFAULT_MENUS = [
+  {id:'m1',name:'アビヤンガ フルボディ', nameEn:'Abhyanga Full Body', price:19800, dur:'2〜2.5時間', cat:'treatment'},
+  {id:'m3',name:'アビヤンガ ハーフボディ',nameEn:'Abhyanga Half Body', price:16500, dur:'1〜1.5時間', cat:'treatment'},
+  {id:'m2',name:'シロダーラ',            nameEn:'Shirodhara',        price:13200, dur:'1時間',      cat:'treatment'},
+  {id:'m4',name:'経絡リンパ',            nameEn:'Meridian Lymph',    price:19800, dur:'1〜1.5時間', cat:'treatment'},
+];
+let MENUS = DEFAULT_MENUS;
+
+// ===== Dosha questions =====
+const prakritiQs_short = [
+  {ja:'体型・体格',v:{ja:'細身・痩せやすい'},p:{ja:'中肉中背・筋肉質'},k:{ja:'がっしり・太りやすい'}},
+  {ja:'肌の状態',v:{ja:'乾燥しやすい・荒れやすい'},p:{ja:'敏感・赤みが出やすい'},k:{ja:'しっとり・脂性気味'}},
+  {ja:'髪の状態',v:{ja:'細い・パサつく・くせ毛'},p:{ja:'柔らかい・猫っ毛・白髪が出やすい'},k:{ja:'太くてしっかり・黒い'}},
+  {ja:'体温・冷え',v:{ja:'冷え性・寒がり'},p:{ja:'体が温かい・暑がり'},k:{ja:'どちらでもない・湿気が苦手'}},
+  {ja:'食欲・消化',v:{ja:'食欲が不規則・消化が弱い'},p:{ja:'空腹になると怒りっぽい・消化が強い'},k:{ja:'食欲は安定・食べすぎ傾向'}},
+  {ja:'便通',v:{ja:'便秘気味・不規則'},p:{ja:'下痢気味・軟らかい'},k:{ja:'規則的・普通'}},
+  {ja:'睡眠',v:{ja:'眠りが浅い・寝つきが悪い'},p:{ja:'睡眠は良いが少なめで十分'},k:{ja:'深い・長時間寝る・朝起きにくい'}},
+  {ja:'思考スタイル',v:{ja:'アイデアが次々浮かぶ・飽きやすい'},p:{ja:'集中力がある・目標志向'},k:{ja:'じっくり考える・慎重'}},
+  {ja:'気分の変わりやすさ',v:{ja:'気分がよく変わる・不安になりやすい'},p:{ja:'イライラしやすい・情熱的'},k:{ja:'穏やか・感情が安定している'}},
+  {ja:'話し方・行動',v:{ja:'早口・せっかち'},p:{ja:'はっきり・鋭い・説得力がある'},k:{ja:'ゆっくり・丁寧・落ち着いている'}},
+];
+const prakritiQs = [
+  {ja:'体型・体格',v:{ja:'背が高いまたはやせ型'},p:{ja:'中肉中背'},k:{ja:'背が低いまたはガッチリ'}},
+  {ja:'肌の質感',v:{ja:'色黒の肌・乾燥・カサカサ'},p:{ja:'黄色っぽい肌・赤ら顔・湿疹あり'},k:{ja:'色白肌・しっとり'}},
+  {ja:'シワ・そばかす',v:{ja:'シワが出やすい'},p:{ja:'そばかす・ほくろが多い'},k:{ja:'ニキビが出やすい'}},
+  {ja:'髪質',v:{ja:'枝毛・老齢とともに白髪'},p:{ja:'柔らかい毛・若白髪・若ハゲ'},k:{ja:'黒髪・綺麗な髪・毛深い'}},
+  {ja:'髪の伸び・量',v:{ja:'髪があまり伸びない'},p:{ja:'髪の毛の色素が薄い'},k:{ja:'歳に対して毛髪の量が多い'}},
+  {ja:'骨格・関節',v:{ja:'骨格・骨の関節が大きい'},p:{ja:'骨格普通'},k:{ja:'関節が丈夫'}},
+  {ja:'筋肉・脂肪',v:{ja:'筋肉・皮下脂肪少ない'},p:{ja:'筋肉・皮下脂肪普通'},k:{ja:'筋肉発達しやすい・脂肪多い'}},
+  {ja:'血管・体臭',v:{ja:'血管・腱が浮上しやすい'},p:{ja:'口臭・体臭がある'},k:{ja:'首・胴体・脚が太め'}},
+  {ja:'思考スタイル',v:{ja:'直感的・楽観的'},p:{ja:'よく考え、決めたことを貫きたい'},k:{ja:'慎重・悲観的'}},
+  {ja:'集中力',v:{ja:'集中力はあまりない'},p:{ja:'好きなことは集中する'},k:{ja:'集中力はあるほう'}},
+  {ja:'記憶力',v:{ja:'早く覚えるがすぐ忘れる'},p:{ja:'理解力・記憶力は良い'},k:{ja:'時間はかかるが忘れにくい'}},
+  {ja:'怒り方',v:{ja:'腹が立つがすぐ忘れる'},p:{ja:'イライラしやすい'},k:{ja:'あまり怒らない'}},
+  {ja:'不安・緊張',v:{ja:'不安・緊張しやすい'},p:{ja:'神経質・批判的になりやすい'},k:{ja:'内向的・気分が沈みやすい'}},
+  {ja:'お金の使い方',v:{ja:'衝動買いをすることが多い'},p:{ja:'見栄を張って高いものを買ってしまう'},k:{ja:'お金はあまり使わず貯める'}},
+  {ja:'趣味の傾向',v:{ja:'刺激的な趣味が好き'},p:{ja:'自分を飾る趣味が好き'},k:{ja:'落ち着いたおとなしい趣味'}},
+  {ja:'仕事スタイル',v:{ja:'発想系の仕事が好き'},p:{ja:'企画を実行するのが好き'},k:{ja:'確認作業が好き'}},
+  {ja:'睡眠',v:{ja:'不眠・眠りが浅い・寝つきが悪い'},p:{ja:'熟睡できる・寝つきが良い'},k:{ja:'寝るのが好き・寝すぎてしまう'}},
+  {ja:'食欲',v:{ja:'食欲にムラがある'},p:{ja:'食欲は旺盛'},k:{ja:'食べるのは好きだが食べなくても苦にならない'}},
+  {ja:'便通',v:{ja:'便秘になりやすい'},p:{ja:'軟便になりやすい'},k:{ja:'便を出してもすっきりしない'}},
+  {ja:'運動神経',v:{ja:'運動神経がいい'},p:{ja:'運動神経は普通'},k:{ja:'運動神経はよくない'}},
+  {ja:'汗・体温',v:{ja:'汗をあまりかかない'},p:{ja:'汗っかき・暑がり・口が乾く'},k:{ja:'汗をあまりかかない・口は湿っている'}},
+  {ja:'お腹のガス',v:{ja:'お腹にガスが溜まりやすい'},p:{ja:'お腹にガスはたまらない'},k:{ja:'膨満感がある'}},
+  {ja:'痛み・不調',v:{ja:'あちこちに痛みが出やすい'},p:{ja:'胸焼け・目の充血・口内炎などが出やすい'},k:{ja:'鼻水が出やすい'}},
+  {ja:'手足の温度',v:{ja:'手足が冷える'},p:{ja:'体がほてる'},k:{ja:'体全体が冷たい'}},
+];
+const vikritiQs_short = [
+  {d:'vata',ja:'肌や唇が乾燥しやすい・カサつく'},{d:'vata',ja:'便秘や腸のガスが気になる'},{d:'vata',ja:'眠りが浅い・夜中に目が覚める'},{d:'vata',ja:'手足が冷えやすい'},{d:'vata',ja:'不安感・緊張しやすい・落ち着かない'},
+  {d:'pitta',ja:'汗をよくかく・体が熱くなりやすい'},{d:'pitta',ja:'肌が赤くなりやすい・ほてり感がある'},{d:'pitta',ja:'胸焼け・胃の灼熱感がある'},{d:'pitta',ja:'イライラしやすい・怒りっぽい'},{d:'pitta',ja:'口内炎ができやすい'},
+  {d:'kapa',ja:'体が重い・だるい・疲れやすい'},{d:'kapa',ja:'痰・咳・鼻づまりが続く'},{d:'kapa',ja:'朝が特につらい・起きるのが難しい'},{d:'kapa',ja:'手足がむくみやすい'},{d:'kapa',ja:'やる気が出ない・気が重い'},
+];
+const vikritiQs = [
+  {d:'vata',ja:'肌が乾燥している・唇が荒れやすい'},{d:'vata',ja:'胃腸の調子が悪い・ガスが溜まりやすい'},{d:'vata',ja:'便秘がちである・排便が不規則'},{d:'vata',ja:'手足が冷たく冷えやすい'},{d:'vata',ja:'関節や体のどこかが痛む・こわばる'},{d:'vata',ja:'集中力が続かない・気が散りやすい'},{d:'vata',ja:'眠りが浅い・夜中に目が覚める'},{d:'vata',ja:'動悸がしやすい・胸がドキドキする'},{d:'vata',ja:'不安感・緊張・落ち着かない感じがある'},{d:'vata',ja:'午後になると特に疲れやすい'},
+  {d:'pitta',ja:'汗をよくかく・体が熱くなりやすい'},{d:'pitta',ja:'肌に赤いぶつぶつや発疹が出やすい'},{d:'pitta',ja:'顔が赤くなりやすい・ほてり感がある'},{d:'pitta',ja:'白目が充血しやすい'},{d:'pitta',ja:'食欲が非常に強く・食べないとイライラする'},{d:'pitta',ja:'冷たいものをよく食べたくなる'},{d:'pitta',ja:'口内炎ができやすい'},{d:'pitta',ja:'胸焼け・胃の灼熱感がある'},{d:'pitta',ja:'下痢気味・便が軟らかいことが多い'},{d:'pitta',ja:'怒りっぽい・短気になりやすい'},
+  {d:'kapa',ja:'体が重い・だるい感じが続く'},{d:'kapa',ja:'湿気や寒さで体調が悪化しやすい'},{d:'kapa',ja:'手足がだるい・関節が重い'},{d:'kapa',ja:'口の中が甘ったるく感じる'},{d:'kapa',ja:'食事を抜いても平気・食欲があまりない'},{d:'kapa',ja:'痰や咳が出やすい・鼻が詰まりがち'},{d:'kapa',ja:'居眠りしやすい・食後に眠くなる'},{d:'kapa',ja:'ミミズ腫れになりやすい'},{d:'kapa',ja:'気が進まない・やる気が出ない'},{d:'kapa',ja:'朝起きるのがつらい・なかなか動き出せない'},
+];
+
+// ===== State =====
+let lang='ja';
+let step=0;
+let mode=null;
+let skipPrakriti=false;
+let selectedMenuId=null;
+let selectedStart=null;
+const data={};
+
+// ===== Helpers =====
+function $(id){return document.getElementById(id);}
+function setLang(l){
+  lang=l;
+  $('lb-ja').classList.toggle('active',l==='ja');
+  $('lb-en').classList.toggle('active',l==='en');
+  document.querySelectorAll('.ja').forEach(e=>e.style.display=l==='ja'?'':'none');
+  document.querySelectorAll('.en').forEach(e=>e.style.display=l==='en'?'':'none');
+}
+function selOne(el,group){
+  $(group).querySelectorAll('.opt-label').forEach(l=>l.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('input').checked=true;
+}
+function selMany(el){
+  const cb=el.querySelector('input');
+  cb.checked=!cb.checked;
+  el.classList.toggle('selected',cb.checked);
+}
+function toggleDeluxe(el){
+  const cb=el.querySelector('input');
+  cb.checked=!cb.checked;
+  el.classList.toggle('selected',cb.checked);
+}
+
+// ===== Menus =====
+async function loadMenus(){
+  try{
+    const {data:rows,error}=await sb.from('retreat_menus').select('id,data');
+    if(!error && rows && rows.length){
+      const ts=rows.map(r=>Object.assign({id:r.id},r.data)).filter(m=>m.cat==='treatment');
+      if(ts.length) MENUS=ts;
+    }
+  }catch(e){}
+  renderMenus();
+}
+function renderMenus(){
+  $('menu-group').innerHTML=MENUS.map(m=>{
+    const nm=lang==='en'&&m.nameEn?m.nameEn:m.name;
+    const pr=m.price?('¥'+Number(m.price).toLocaleString()):'';
+    return '<label class="opt-label menu-card" onclick="selectMenu(\''+m.id+'\',this)">'+
+      '<span style="display:flex;align-items:center;gap:10px"><span class="opt-circle"></span>'+
+      '<span><div>'+nm+'</div><div style="font-size:11px;color:var(--mid)">'+(m.dur||'')+'</div></span></span>'+
+      '<span class="price">'+pr+'</span></label>';
+  }).join('');
+  setLang(lang);
+}
+function selectMenu(id,el){
+  selectedMenuId=id;selectedStart=null;
+  $('menu-group').querySelectorAll('.opt-label').forEach(l=>l.classList.remove('selected'));
+  el.classList.add('selected');
+  renderTimes();
+  $('time-card').style.display='block';
+}
+function expandWindows(wins){
+  // wins: [{from:'09:00',to:'10:00'},...] -> ['09:00','09:30','10:00']
+  const out=[];
+  (wins||[]).forEach(w=>{
+    if(!w.from||!w.to) return;
+    let [h,m]=w.from.split(':').map(Number);
+    const [eh,em]=w.to.split(':').map(Number);
+    let cur=h*60+m; const end=eh*60+em;
+    while(cur<=end){ out.push(String(Math.floor(cur/60)).padStart(2,'0')+':'+String(cur%60).padStart(2,'0')); cur+=30; }
+  });
+  return [...new Set(out)].filter(t=>t<='15:00');
+}
+function renderTimes(){
+  const m=MENUS.find(x=>x.id===selectedMenuId);
+  let slots=expandWindows(m&&m.startWindows);
+  if(!slots.length){
+    // fallback: generic time-of-day windows
+    slots=['09:00','10:00','11:00','13:00','14:00','15:00'];
+  }
+  $('time-group').innerHTML=slots.map(t=>
+    '<label class="opt-label" style="justify-content:center" onclick="selectStart(\''+t+'\',this)"><input type="radio" name="start"><span>'+t+'〜</span></label>'
+  ).join('');
+}
+function selectStart(t,el){
+  selectedStart=t;
+  $('time-group').querySelectorAll('.opt-label').forEach(l=>l.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ===== Dosha forms =====
+function onTakenChange(){
+  const v=document.querySelector('input[name="taken"]:checked');
+  if(!v) return;
+  skipPrakriti=(v.value==='yes');
+  $('mode-card').style.display='block';
+  if(skipPrakriti){ $('prakriti-card').style.display='none'; }
+}
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected'));
+  $('mode-btn-'+m).classList.add('selected');
+  if(!skipPrakriti){
+    buildPrakriti();
+    $('prakriti-card').style.display='block';
+  }
+}
+function buildPrakriti(){
+  const qs=mode==='short'?prakritiQs_short:prakritiQs;
+  $('prakriti-form').innerHTML=qs.map((q,i)=>{
+    const opts=['v','p','k'].map(d=>
+      '<label class="opt-label" onclick="selOne(this,\'pq-'+i+'\')"><input type="radio" name="pq'+i+'" value="'+d+'"><div class="opt-circle"></div><span>'+q[d].ja+'</span></label>'
+    ).join('');
+    return '<div class="dosha-q"><p>'+(i+1)+'. '+q.ja+'</p><div class="option-group" id="pq-'+i+'">'+opts+'</div></div>';
+  }).join('');
+}
+function buildVikriti(){
+  const qs=mode==='short'?vikritiQs_short:vikritiQs;
+  let html='';
+  qs.forEach((q,i)=>{
+    let btns='';
+    for(let n=1;n<=5;n++) btns+='<div class="scale-btn" id="vq'+i+'-'+n+'" onclick="selScale('+i+','+n+')">'+n+'</div>';
+    html+='<div class="dosha-q"><p>'+(i+1)+'. '+q.ja+'</p><div class="scale-row"><div class="scale-btns">'+btns+'</div></div></div>';
+  });
+  $('vikriti-form').innerHTML=html;
+}
+function selScale(i,n){
+  for(let x=1;x<=5;x++) $('vq'+i+'-'+x).classList.toggle('selected',x===n);
+}
+function dominant(s){
+  const max=Math.max(s.v,s.p,s.k);
+  if(s.v===max&&s.p===max&&s.k===max) return 'tridosha';
+  const d=[];if(s.v===max)d.push('ヴァータ');if(s.p===max)d.push('ピッタ');if(s.k===max)d.push('カパ');
+  return d.join('＋');
+}
+
+// ===== Collect =====
+function collect(){
+  data.name=$('f-name').value.trim();
+  data.kana=$('f-kana').value.trim();
+  data.phone=$('f-phone').value.trim();
+  data.email=$('f-email').value.trim();
+  data.gender=(document.querySelector('input[name="gender"]:checked')||{}).value||'';
+  data.age=(document.querySelector('input[name="age"]:checked')||{}).value||'';
+  data.deluxe=$('f-deluxe').checked;
+  data.rep=$('f-rep').value.trim();
+  data.checkin=$('f-checkin').value;
+  data.checkout=$('f-checkout').value;
+  data.menuId=selectedMenuId;
+  data.start=selectedStart;
+  data.trDate=$('f-trdate').value;
+  data.medical=[...document.querySelectorAll('#medical-group input:checked')].map(i=>i.value);
+  data.chronic=[...document.querySelectorAll('#chronic-group input:checked')].map(i=>i.value);
+  data.allergy=$('f-allergy').value.trim();
+  data.goals=$('f-goals').value.trim();
+  // prakriti
+  let pv=0,pp=0,pk=0;
+  const pqs=mode==='short'?prakritiQs_short:prakritiQs;
+  const pAns=pqs.map((q,i)=>{
+    const r=document.querySelector('input[name="pq'+i+'"]:checked');
+    if(r){if(r.value==='v')pv++;else if(r.value==='p')pp++;else pk++;}
+    return r?r.value:null;
+  });
+  data.prakriti={v:pv,p:pp,k:pk};
+  data.prakritiAnswers=pAns;
+  data.prakritiMode=mode||'short';
+  if(skipPrakriti){ data.prakritiSkipped=true; data.prakriti={v:0,p:0,k:0}; }
+  // vikriti
+  let vv=0,vp=0,vk=0;const vScores=[];
+  const vqs=mode==='short'?vikritiQs_short:vikritiQs;
+  vqs.forEach((q,i)=>{
+    let sc=0;
+    for(let n=1;n<=5;n++){const el=$('vq'+i+'-'+n);if(el&&el.classList.contains('selected')){sc=n;break;}}
+    vScores.push(sc);
+    if(q.d==='vata')vv+=sc;else if(q.d==='pitta')vp+=sc;else vk+=sc;
+  });
+  data.vikriti={v:vv,p:vp,k:vk};
+  data.vikScores=vScores;
+  data.vikritiMode=mode||'short';
+}
+
+function buildReview(){
+  collect();
+  const m=MENUS.find(x=>x.id===selectedMenuId);
+  const medMap={heart:'心臓疾患',hypertension:'高血圧',diabetes:'糖尿病',skin:'皮膚疾患',allergy:'アレルギー',spine:'脊椎疾患',mental:'精神疾患',none:'特になし'};
+  const chMap={shoulders:'肩こり',back:'腰痛',cold:'冷え性',insomnia:'不眠',fatigue:'疲労感',digestion:'消化器',anxiety:'不安・ストレス',skin2:'肌荒れ',none:'特になし'};
+  function box(k,v){return '<div class="review-box"><div class="k">'+k+'</div><div>'+(v||'—')+'</div></div>';}
+  let h='';
+  h+=box('お名前',data.name+(data.kana?' ('+data.kana+')':''));
+  h+=box('連絡先',data.phone+'　'+data.email);
+  h+=box('宿泊代表者',data.rep);
+  h+=box('ご宿泊',data.checkin+' 〜 '+data.checkout);
+  h+=box('ご希望メニュー',(m?m.name:'')+(data.start?'　／　'+data.start+'〜':''));
+  if(data.trDate) h+=box('ご希望施術日',data.trDate);
+  if(data.medical.length) h+=box('既往症',data.medical.map(x=>medMap[x]||x).join('、'));
+  if(data.chronic.length) h+=box('不調',data.chronic.map(x=>chMap[x]||x).join('、'));
+  if(data.allergy) h+=box('アレルギー・注意',data.allergy);
+  if(data.goals) h+=box('ご要望',data.goals);
+  if(data.prakritiSkipped){ h+=box('プラクリティ','登録済みのため省略'); }
+  else { h+=box('プラクリティ（体質）','優勢：'+dominant(data.prakriti)+'　(V'+data.prakriti.v+'/P'+data.prakriti.p+'/K'+data.prakriti.k+')'); }
+  h+=box('ヴィクリティ（現在の乱れ）','亢進：'+dominant(data.vikriti)+'　(V'+data.vikriti.v+'/P'+data.vikriti.p+'/K'+data.vikriti.k+')');
+  $('review-content').innerHTML=h;
+}
+
+// ===== Navigation =====
+function showStep(n){
+  document.querySelectorAll('.wrap .step').forEach(s=>s.classList.remove('active'));
+  $('step-'+n).classList.add('active');
+  for(let i=0;i<=6;i++){
+    const p=$('prog-'+i);
+    p.classList.toggle('active',i===n);
+    p.classList.toggle('done',i<n);
+  }
+  $('btn-back').style.display=n>0?'':'none';
+  $('btn-next').innerHTML=n===6?'<span class="ja">送信する ✓</span><span class="en">Submit ✓</span>':'<span class="ja">次へ →</span><span class="en">Next →</span>';
+  setLang(lang);
+  window.scrollTo(0,0);
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+function validate(n){
+  if(n===0){
+    if(!$('f-name').value.trim()){alert(lang==='ja'?'お名前を入力してください':'Please enter your name');return false;}
+    if(!$('f-phone').value.trim()){alert(lang==='ja'?'電話番号を入力してください':'Please enter your phone');return false;}
+    if(!$('f-email').value.trim()){alert(lang==='ja'?'メールアドレスを入力してください':'Please enter your email');return false;}
+    if(!document.querySelector('input[name="age"]:checked')){alert(lang==='ja'?'年代を選択してください':'Please select age');return false;}
+  }
+  if(n===1){
+    if(!$('f-deluxe').checked){alert(lang==='ja'?'トリートメントはデラックスツインご宿泊予約者様限定です。ご予約済みの場合はチェックを入れてください。':'Treatments require a Deluxe Twin reservation.');return false;}
+    if(!$('f-rep').value.trim()){alert(lang==='ja'?'宿泊代表者様のお名前を入力してください':'Please enter the representative name');return false;}
+    if(!$('f-checkin').value||!$('f-checkout').value){alert(lang==='ja'?'宿泊日を入力してください':'Please enter stay dates');return false;}
+    if($('f-checkout').value<=$('f-checkin').value){alert(lang==='ja'?'チェックアウト日はチェックイン日より後にしてください':'Check-out must be after check-in');return false;}
+    const nights=Math.round((new Date($('f-checkout').value)-new Date($('f-checkin').value))/86400000);
+    if(nights<2){alert(lang==='ja'?'トリートメントは連泊（2泊以上）のご滞在の方限定です。1泊のご滞在ではご予約いただけません。':'Treatments require a stay of 2 nights or more.');return false;}
+  }
+  if(n===2){
+    if(!selectedMenuId){alert(lang==='ja'?'メニューを選択してください':'Please select a treatment');return false;}
+  }
+  if(n===4){
+    if(!document.querySelector('input[name="taken"]:checked')){alert(lang==='ja'?'プラクリティ診断の有無を選択してください':'Please answer the Prakriti question');return false;}
+    if(!mode){alert(lang==='ja'?'診断の方法を選択してください':'Please choose a mode');return false;}
+  }
+  return true;
+}
+
+function nextStep(){
+  if(!validate(step)) return;
+  if(step===4){
+    // build vikriti before showing step 5
+    buildVikriti();
+    step=5; showStep(5); return;
+  }
+  if(step===5){ buildReview(); step=6; showStep(6); return; }
+  if(step===6){ submit(); return; }
+  step++; showStep(step);
+}
+function prevStep(){
+  if(step===0) return;
+  step--; showStep(step);
+}
+
+async function submit(){
+  collect();
+  const btn=$('btn-next'); btn.disabled=true;
+  const bid=uid();
+  const m=MENUS.find(x=>x.id===selectedMenuId);
+  const noteLines=[];
+  noteLines.push('【WEB予約】施術を受ける方：'+data.name);
+  noteLines.push('希望メニュー：'+(m?m.name:'')+(data.start?'（希望スタート '+data.start+'〜）':''));
+  if(data.trDate) noteLines.push('希望施術日：'+data.trDate);
+  noteLines.push('宿泊：デラックスツイン（予約済み申告）'+data.checkin+'〜'+data.checkout);
+  if(data.goals) noteLines.push('ご要望：'+data.goals);
+  const booking={
+    id:bid,
+    rep:data.rep||data.name,
+    phone:data.phone,
+    email:data.email,
+    plan:'treatment',
+    room:'デラックスツイン',
+    status:'pending',
+    source:'web',
+    checkin:data.checkin,
+    checkout:data.checkout,
+    allergy:data.allergy,
+    notes:noteLines.join('\n'),
+    guests:[{name:data.name,menuId:selectedMenuId,trDate:data.trDate||'',trTime:data.start||'',addTrs:[]}],
+    kartes:[],
+    createdAt:new Date().toISOString()
+  };
+  const gform=Object.assign({},data,{bookingId:bid,submittedAt:new Date().toISOString()});
+  try{
+    const r1=await sb.from('retreat_bookings').insert({id:bid,checkin:data.checkin||null,status:'pending',data:booking});
+    if(r1.error) throw r1.error;
+    const r2=await sb.from('retreat_guest_forms').insert({id:uid(),booking_id:bid,data:gform});
+    if(r2.error) throw r2.error;
+    document.querySelectorAll('.wrap .step').forEach(s=>s.classList.remove('active'));
+    $('step-done').classList.add('active');
+    $('step-nav').style.display='none';
+    document.querySelector('.progress-bar').style.display='none';
+    setLang(lang);
+    window.scrollTo(0,0);
+  }catch(e){
+    btn.disabled=false;
+    alert(lang==='ja'?('送信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。\n'+(e.message||'')):'Submission failed. Please try again.\n'+(e.message||''));
+  }
+}
+
+// ===== Init =====
+loadMenus();
+showStep(0);
+</script>
+</body>
+</html>
