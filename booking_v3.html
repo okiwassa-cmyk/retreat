@@ -1256,7 +1256,7 @@ function onDateChange(){
   const pd=plans.find(x=>x.id===plan);
   if(pd&&pd.isRetreat) d.setDate(d.getDate()+(pd.nights||0));
   if(pd&&pd.isRetreat) document.getElementById('b-co').value=d.toISOString().slice(0,10);
-  else document.getElementById('b-co').value=ci;
+  else { const coEl=document.getElementById('b-co'); if(!coEl.value) coEl.value=ci; }
   // ゲストスケジュールに日付反映
   renderGuestArea();
 }
@@ -1591,6 +1591,8 @@ function saveBooking(){
   const ci   = document.getElementById('b-ci').value;
   const plan = document.getElementById('b-plan').value;
   if(!rep||!ci||!plan){ alert('代表者名・チェックイン日・プラン種別は必須です'); return; }
+  if(window._savingBooking) return;
+  window._savingBooking = true;
   if(bGuests[0] && !bGuests[0].name) bGuests[0].name = rep;
 
   const bk = {
@@ -1626,6 +1628,7 @@ function saveBooking(){
   const _formUrl = _baseUrl + '?booking=' + bk.id;
   document.getElementById('b-form-url-text').textContent = _formUrl;
   window._lastBookingId = bk.id;
+  window._savingBooking = false;
 }
 
 
@@ -2074,7 +2077,7 @@ function showEditMode(id){
 
 function renderEditForm(b){
   const SL=[{v:'confirmed',l:'✅ 確定（入金済み）'},{v:'pending',l:'🕐 仮予約（調整中）'},{v:'cancelled',l:'❌ キャンセル'}];
-  const isRetreat=b.plan.startsWith('retreat');
+  const isRetreat=b.plan==='treatment'?false:(!!(plans.find(x=>x.id===b.plan)?.isRetreat)||b.plan.includes('retreat'));
   let html='<div class="fgrid" style="margin-bottom:14px">';
   html+='<div class="fg"><label>代表者名</label><input id="edit-rep" value="'+(b.rep||'')+'"></div>';
   html+='<div class="fg"><label>電話番号</label><input id="edit-phone" value="'+(b.phone||'')+'"></div>';
@@ -2379,9 +2382,11 @@ function dominantDoshaFromScores(scores){
   const {v=0,p=0,k=0}=scores;
   if(v===0&&p===0&&k===0) return '—';
   const max=Math.max(v,p,k);
-  if(max===v) return 'ヴァータ';
-  if(max===p) return 'ピッタ';
-  return 'カパ';
+  const d=[];
+  if(v===max) d.push('ヴァータ');
+  if(p===max) d.push('ピッタ');
+  if(k===max) d.push('カパ');
+  return d.join('＋');
 }
 
 function execImport(bookingId, form){
@@ -2996,14 +3001,14 @@ function renderCal(){
   let cells=[];
   for(let i=first-1;i>=0;i--) cells.push({day:prev-i,cur:false});
   for(let d=1;d<=days;d++)    cells.push({day:d,cur:true});
-  while(cells.length%7) cells.push({day:cells.length-days-first+2,cur:false});
+  while(cells.length%7) cells.push({day:cells.length-days-first+1,cur:false});
 
   // イベント収集
   const evts={}; // date-string -> [{type,label,name}]
   const addE=(ds,e)=>{ if(!evts[ds])evts[ds]=[]; evts[ds].push(e); };
 
   bookings.filter(b=>b.status!=='cancelled').forEach(function(b){
-    const isRetreat=b.plan.startsWith('retreat');
+    const isRetreat=b.plan==='treatment'?false:(!!(plans.find(x=>x.id===b.plan)?.isRetreat)||b.plan.includes('retreat'));
     if(!isRetreat){
       // 単体施術：施術日時をtr
       (b.guests||[]).forEach(function(g){
@@ -3974,6 +3979,7 @@ function gf_nextStep() {
 
   // 再来ゲスト：STEP1→STEP2(プラクリティ)をスキップしてSTEP3(ヴィクリティ)へ
   if(gf_currentStep===1 && gf_skipPrakriti) {
+    if(!gf_currentMode) gf_currentMode='short';
     document.getElementById('prog-'+gf_currentStep).classList.remove('active');
     document.getElementById('prog-'+gf_currentStep).classList.add('done');
     document.getElementById('prog-2').classList.add('done');
