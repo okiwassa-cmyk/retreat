@@ -237,6 +237,13 @@ textarea{min-height:70px;resize:vertical}
       <label class="opt-label" onclick="selOne(this,'taken-group');onTakenChange()"><input type="radio" name="taken" value="yes"><div class="opt-circle"></div><span class="ja">はい（省略します）</span><span class="en">Yes (skip)</span></label>
     </div>
   </div>
+  <div id="vikriti-reason" style="display:none">
+    <div class="note" style="text-align:left;margin-bottom:14px;font-size:13px;line-height:1.8">
+      <strong>🌿 <span class="ja">ヴィクリティ（現在の乱れ）診断について</span><span class="en">About Vikriti (current imbalance)</span></strong><br>
+      <span class="ja">プラクリティは生まれ持った体質ですが、ヴィクリティは<strong>今この瞬間のバランスの乱れ</strong>を示します。<br>ストレス・食事・季節・生活リズムによって毎回変わるため、リピーターの方にも毎回お答えいただいています。施術内容やオイルの選択に活かします。</span>
+      <span class="en">Your Prakriti is your innate constitution, but Vikriti reflects <strong>your current imbalance</strong>.<br>It changes with stress, diet, seasons, and lifestyle — so we ask returning guests each visit. Your answers help us tailor the treatment and oil selection.</span>
+    </div>
+  </div>
   <div class="fcard" id="mode-card" style="display:none;text-align:center">
     <div class="fcard-title"><span class="ja">診断の方法を選んでください</span><span class="en">Choose mode</span></div>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:14px">
@@ -454,6 +461,7 @@ function onTakenChange(){
   const v=document.querySelector('input[name="taken"]:checked');
   if(!v) return;
   skipPrakriti=(v.value==='yes');
+  $('vikriti-reason').style.display=skipPrakriti?'block':'none';
   $('mode-card').style.display='block';
   if(skipPrakriti){ $('prakriti-card').style.display='none'; }
 }
