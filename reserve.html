@@ -372,8 +372,8 @@ function setLang(l){
   lang=l;
   $('lb-ja').classList.toggle('active',l==='ja');
   $('lb-en').classList.toggle('active',l==='en');
-  document.querySelectorAll('.ja').forEach(e=>e.style.display=l==='ja'?'':'none');
-  document.querySelectorAll('.en').forEach(e=>e.style.display=l==='en'?'':'none');
+  document.querySelectorAll('.ja').forEach(e=>e.style.display=l==='ja'?'inline':'none');
+  document.querySelectorAll('.en').forEach(e=>e.style.display=l==='en'?'inline':'none');
 }
 function selOne(el,group){
   $(group).querySelectorAll('.opt-label').forEach(l=>l.classList.remove('selected'));
