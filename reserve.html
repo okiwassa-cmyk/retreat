@@ -299,6 +299,8 @@ textarea{min-height:70px;resize:vertical}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('EwNCZH7q5pFtNG7Tz');</script>
 <script>
 // ===== Supabase =====
 const SB_URL = 'https://ohwvkcxoxmjfvhscyddt.supabase.co';
@@ -662,6 +664,16 @@ async function submit(){
     if(r1.error) throw r1.error;
     const r2=await sb.from('retreat_guest_forms').insert({id:uid(),booking_id:bid,data:gform});
     if(r2.error) throw r2.error;
+    // メール通知
+    emailjs.send('service_u7fg6tj','template_1ovl999',{
+      guest_name: data.name||'',
+      phone: data.phone||'',
+      email: data.email||'',
+      checkin: data.checkin||'',
+      checkout: data.checkout||'',
+      menu_name: m?m.name:'',
+      start_time: data.start||'希望なし',
+    }).catch(function(e){ console.warn('メール通知エラー',e); });
     document.querySelectorAll('.wrap .step').forEach(s=>s.classList.remove('active'));
     $('step-done').classList.add('active');
     $('step-nav').style.display='none';
