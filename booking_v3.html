@@ -1143,12 +1143,13 @@ async function sbLoadAll(){
     pull('retreat_clients'),pull('retreat_plans'),pull('retreat_menus'),
     pull('retreat_activities'),pull('retreat_templates'),pull('retreat_bookings'),pull('retreat_guest_forms')
   ]);
-  if(c) clients=c.map(r=>r.data);
+  // 空サーバー（[]）でローカルを消さない：件数がある時だけ置き換える（2026-03のデータ消失対策）
+  if(c && c.length) clients=c.map(r=>r.data);
   if(p) plans=p.length?p.map(r=>r.data):DEFAULT_PLANS;
   if(m) menus=m.length?m.map(r=>r.data):DEFAULT_MENUS;
   if(a) activities=a.length?a.map(r=>r.data):DEFAULT_ACTIVITIES;
   if(tpl){ const t={}; tpl.forEach(r=>t[r.id]=r.data); templates=Object.keys(t).length?t:JSON.parse(JSON.stringify(DEFAULT_TEMPLATES)); }
-  if(b) bookings=b.map(r=>r.data);
+  if(b && b.length) bookings=b.map(r=>r.data);
   if(gf){ const forms=gf.map(r=>r.data); localStorage.setItem('yr_guest_forms', JSON.stringify(forms)); }
   // ローカルキャッシュ更新（_sbReady=false の間に書いて再 push しない）
   save('yr2_clients',clients); save('yr2_plans',plans); save('yr2_menus',menus);
