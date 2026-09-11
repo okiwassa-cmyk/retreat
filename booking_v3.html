@@ -970,6 +970,7 @@ tr:hover td{background:var(--teal-lt)}
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-foot" id="modal-foot-view" style="flex-wrap:wrap">
       <button class="btn btn-danger btn-sm" id="modal-del-btn">削除</button>
+      <button class="btn btn-secondary btn-sm" id="modal-formurl-btn">🔗 フォームURL</button>
       <button class="btn btn-secondary btn-sm" id="modal-import-btn">📋 フォーム取込</button>
       <button class="btn btn-secondary btn-sm" id="modal-print-btn">🖨 印刷</button>
       <button class="btn btn-primary btn-sm" id="modal-edit-btn">✏️ 編集</button>
@@ -2044,6 +2045,34 @@ function renderList(){
 // ============================================================
 let _editGuests = null;
 
+// お客様にお送りする問診・体質診断フォームのURL。
+// ?booking= 付きで開くと宿泊情報・ご予約内容は尋ねず、問診と体質診断だけを記入していただく。
+// 送信されても新規予約は作られず、この予約に問診票が紐づくだけ。
+const GUEST_FORM_BASE = 'https://okiwassa-cmyk.github.io/retreat/reserve.html';
+
+function guestFormUrl(bookingId){
+  return GUEST_FORM_BASE + '?booking=' + encodeURIComponent(bookingId);
+}
+
+function copyGuestFormUrl(bookingId){
+  const b = bookings.find(x=>x.id===bookingId);
+  const url = guestFormUrl(bookingId);
+  const who = b ? (b.rep||'') + '様' : '';
+  const note = '【' + who + 'のフォームURL】\n\n' + url +
+               '\n\n・宿泊情報とご予約内容は入力不要です（登録済みのため）\n' +
+               '・同伴の方も同じURLをお使いいただけます（お一人ずつご記入）\n' +
+               '・回答は「📋 フォーム取込」でこの予約に取り込めます';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){
+      alert('✅ URLをコピーしました\n\n' + note);
+    }).catch(function(){
+      window.prompt('下記URLをコピーしてお客様にお送りください', url);
+    });
+  } else {
+    window.prompt('下記URLをコピーしてお客様にお送りください', url);
+  }
+}
+
 function showDetail(id){
   const b=bookings.find(x=>x.id===id);
   if(!b) return;
@@ -2058,6 +2087,7 @@ function showDetail(id){
   };
   document.getElementById('modal-edit-btn').onclick=function(){ showEditMode(id); };
   document.getElementById('modal-import-btn').onclick=function(){ openImportModal(id); };
+  document.getElementById('modal-formurl-btn').onclick=function(){ copyGuestFormUrl(id); };
   // 印刷ボタン：ゲスト1名なら全体、2名以上ならゲスト別ボタンを追加
   const _foot = document.getElementById('modal-foot-view');
   // 既存の動的印刷ボタンを削除
@@ -2418,7 +2448,7 @@ function openImportModal(bookingId){
   const b=bookings.find(x=>x.id===bookingId);
   if(!b) return;
   const forms=JSON.parse(localStorage.getItem('yr_guest_forms')||'[]');
-  if(!forms.length){ alert('ゲスト入力フォームのデータがありません。\nguest_form.html から先にフォームを送信してください。'); return; }
+  if(!forms.length){ alert('ゲスト入力フォームのデータがありません。\n「🔗 フォームURL」でURLをコピーしてお客様にお送りし、\nご記入いただいてから取り込んでください。'); return; }
 
   // ゲスト名で照合（部分一致・ひらがな・カタカナ対応）
   const guestNames=(b.guests||[]).map(g=>(g.name||'').trim()).filter(Boolean);

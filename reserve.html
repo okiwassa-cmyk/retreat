@@ -84,7 +84,8 @@ textarea{min-height:70px;resize:vertical}
 <div class="form-header">
   <a href="https://routine.wassa-okinawa.com/" onclick="history.length>1?(history.back(),event.preventDefault()):null" style="display:inline-block;margin-bottom:10px;color:rgba(255,255,255,.7);font-size:13px;text-decoration:none">← <span class="ja">ホームへ戻る</span><span class="en">Back to Home</span></a>
   <h1>YAMBARU <em>Retreat</em></h1>
-  <p><span class="ja">トリートメントのご予約フォームです。デラックスツインにご宿泊予約済みの方がご利用いただけます。</span><span class="en">Treatment reservation form. Available to guests with a confirmed Deluxe Twin stay.</span></p>
+  <p id="hdr-lead"><span class="ja">トリートメントのご予約フォームです。デラックスツインにご宿泊予約済みの方がご利用いただけます。</span><span class="en">Treatment reservation form. Available to guests with a confirmed Deluxe Twin stay.</span></p>
+  <p id="hdr-lead-linked" style="display:none"><span class="ja">ご予約を承っております。当日に向けて、問診と体質診断（ドーシャ）のご記入をお願いいたします。</span><span class="en">Your treatment is booked. Please complete the health questionnaire and dosha assessment before your visit.</span></p>
 </div>
 
 <div class="progress-bar">
@@ -286,7 +287,8 @@ textarea{min-height:70px;resize:vertical}
   <div class="fcard" style="text-align:center;padding:34px 22px">
     <div style="font-size:48px">🌿</div>
     <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--teal);margin:10px 0"><span class="ja">ありがとうございます</span><span class="en">Thank You</span></h2>
-    <p style="font-size:13px;color:var(--mid)"><span class="ja">ご予約リクエストを受け付けました。<br>内容を確認のうえ、施術日時をご提案するご連絡をいたします。</span><span class="en">Your reservation request has been received.<br>We will contact you to propose a treatment time.</span></p>
+    <p id="done-lead" style="font-size:13px;color:var(--mid)"><span class="ja">ご予約リクエストを受け付けました。<br>内容を確認のうえ、施術日時をご提案するご連絡をいたします。</span><span class="en">Your reservation request has been received.<br>We will contact you to propose a treatment time.</span></p>
+    <p id="done-lead-linked" style="display:none;font-size:13px;color:var(--mid)"><span class="ja">問診・体質診断のご記入を承りました。<br>当日はこの内容をもとに、お一人おひとりに合わせた施術をご用意いたします。<br>お会いできるのを楽しみにしております。</span><span class="en">Your questionnaire and dosha assessment have been received.<br>We will tailor your treatment accordingly. We look forward to seeing you.</span></p>
     <a href="https://routine.wassa-okinawa.com/" onclick="history.length>1?(history.back(),event.preventDefault()):null" style="display:inline-block;margin-top:22px;background:var(--teal);color:#fff;text-decoration:none;padding:13px 32px;border-radius:30px;font-size:14px;font-weight:600"><span class="ja">← ホームへ戻る</span><span class="en">← Back to Home</span></a>
   </div>
 </div>
@@ -374,6 +376,14 @@ let skipPrakriti=false;
 let selectedMenuId=null;
 let selectedStart=null;
 const data={};
+
+// ===== Mode =====
+// ?booking=<予約ID> が付いている場合は「問診・体質診断のみモード」。
+// スタッフが管理画面で予約を登録済みなので、宿泊情報(step1)・ご予約内容(step2)は尋ねない。
+// 送信時は新規予約を作らず、retreat_guest_forms にその予約IDで紐づけるだけ。
+const LINKED_BID = (new URLSearchParams(location.search).get('booking')||'').trim();
+const LINKED = !!LINKED_BID;
+const STEP_ORDER = LINKED ? [0,3,4,5,6] : [0,1,2,3,4,5,6];
 
 // ===== Helpers =====
 function $(id){return document.getElementById(id);}
@@ -559,10 +569,12 @@ function buildReview(){
   let h='';
   h+=box('お名前',data.name+(data.kana?' ('+data.kana+')':''));
   h+=box('連絡先',data.phone+'　'+data.email);
-  h+=box('宿泊代表者',data.rep);
-  h+=box('ご宿泊',data.checkin+' 〜 '+data.checkout);
-  h+=box('ご希望メニュー',(m?m.name:'')+(data.start?'　／　'+data.start+'〜':''));
-  if(data.trDate) h+=box('ご希望施術日',data.trDate);
+  if(!LINKED){
+    h+=box('宿泊代表者',data.rep);
+    h+=box('ご宿泊',data.checkin+' 〜 '+data.checkout);
+    h+=box('ご希望メニュー',(m?m.name:'')+(data.start?'　／　'+data.start+'〜':''));
+    if(data.trDate) h+=box('ご希望施術日',data.trDate);
+  }
   if(data.medical.length) h+=box('既往症',data.medical.map(x=>medMap[x]||x).join('、'));
   if(data.chronic.length) h+=box('不調',data.chronic.map(x=>chMap[x]||x).join('、'));
   if(data.allergy) h+=box('アレルギー・注意',data.allergy);
@@ -579,10 +591,11 @@ function showStep(n){
   $('step-'+n).classList.add('active');
   for(let i=0;i<=6;i++){
     const p=$('prog-'+i);
+    if(STEP_ORDER.indexOf(i)<0){ p.style.display='none'; continue; }
     p.classList.toggle('active',i===n);
     p.classList.toggle('done',i<n);
   }
-  $('btn-back').style.display=n>0?'':'none';
+  $('btn-back').style.display=STEP_ORDER.indexOf(n)>0?'':'none';
   $('btn-next').innerHTML=n===6?'<span class="ja">送信する ✓</span><span class="en">Submit ✓</span>':'<span class="ja">次へ →</span><span class="en">Next →</span>';
   setLang(lang);
   window.scrollTo(0,0);
@@ -590,6 +603,9 @@ function showStep(n){
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 function validate(n){
+  // 問診・体質診断のみモードでは宿泊情報(1)・ご予約内容(2)は表示しないので検証も不要。
+  // 自己申込モードでは従来どおり全項目必須（飛ばせない）。
+  if(LINKED && (n===1||n===2)) return true;
   if(n===0){
     if(!$('f-name').value.trim()){alert(lang==='ja'?'お名前を入力してください':'Please enter your name');return false;}
     if(!$('f-phone').value.trim()){alert(lang==='ja'?'電話番号を入力してください':'Please enter your phone');return false;}
@@ -616,18 +632,17 @@ function validate(n){
 
 function nextStep(){
   if(!validate(step)) return;
-  if(step===4){
-    // build vikriti before showing step 5
-    buildVikriti();
-    step=5; showStep(5); return;
-  }
-  if(step===5){ buildReview(); step=6; showStep(6); return; }
   if(step===6){ submit(); return; }
-  step++; showStep(step);
+  const nx=STEP_ORDER[STEP_ORDER.indexOf(step)+1];
+  if(nx===undefined) return;
+  if(nx===5) buildVikriti();   // ヴィクリティ設問は診断方法(mode)が決まってから組み立てる
+  if(nx===6) buildReview();
+  step=nx; showStep(step);
 }
 function prevStep(){
-  if(step===0) return;
-  step--; showStep(step);
+  const i=STEP_ORDER.indexOf(step);
+  if(i<=0) return;
+  step=STEP_ORDER[i-1]; showStep(step);
 }
 
 async function submit(){
@@ -658,21 +673,25 @@ async function submit(){
     kartes:[],
     createdAt:new Date().toISOString()
   };
-  const gform=Object.assign({},data,{bookingId:bid,submittedAt:new Date().toISOString()});
+  // 問診・体質診断のみモードでは新規予約を作らず、既存予約に問診票を紐づけるだけ
+  const targetBid = LINKED ? LINKED_BID : bid;
+  const gform=Object.assign({},data,{bookingId:targetBid,submittedAt:new Date().toISOString()});
   try{
-    const r1=await sb.from('retreat_bookings').insert({id:bid,checkin:data.checkin||null,status:'pending',data:booking});
-    if(r1.error) throw r1.error;
-    const r2=await sb.from('retreat_guest_forms').insert({id:uid(),booking_id:bid,data:gform});
+    if(!LINKED){
+      const r1=await sb.from('retreat_bookings').insert({id:bid,checkin:data.checkin||null,status:'pending',data:booking});
+      if(r1.error) throw r1.error;
+    }
+    const r2=await sb.from('retreat_guest_forms').insert({id:uid(),booking_id:targetBid,data:gform});
     if(r2.error) throw r2.error;
     // メール通知
     emailjs.send('service_u7fg6tj','template_1ovl999',{
       guest_name: data.name||'',
       phone: data.phone||'',
       email: data.email||'',
-      checkin: data.checkin||'',
-      checkout: data.checkout||'',
-      menu_name: m?m.name:'',
-      start_time: data.start||'希望なし',
+      checkin: LINKED?'（登録済み予約）':(data.checkin||''),
+      checkout: LINKED?'':(data.checkout||''),
+      menu_name: LINKED?'問診・体質診断フォームの回答':(m?m.name:''),
+      start_time: LINKED?'—':(data.start||'希望なし'),
     }).catch(function(e){ console.warn('メール通知エラー',e); });
     document.querySelectorAll('.wrap .step').forEach(s=>s.classList.remove('active'));
     $('step-done').classList.add('active');
@@ -687,6 +706,15 @@ async function submit(){
 }
 
 // ===== Init =====
+function applyMode(){
+  if(!LINKED) return;
+  document.title='問診・体質診断のご記入 ｜ YAMBARU Retreat';
+  $('hdr-lead').style.display='none';
+  $('hdr-lead-linked').style.display='';
+  $('done-lead').style.display='none';
+  $('done-lead-linked').style.display='';
+}
+applyMode();
 loadMenus();
 showStep(0);
 </script>
